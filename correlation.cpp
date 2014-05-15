@@ -14,6 +14,17 @@
 #include <array>
 #include <time.h>
 #include <stdlib.h>
-#include <correlation.h>
+#include "correlation.h"
 
-
+int main(int argc, const char * argv[]) {
+    using namespace std;
+    filebuf fb;
+    if (fb.open("example22.traj",std::ios::in))
+    {
+        istream is (&fb);
+        while (is)
+            cout << char(is.get());
+        fb.close();
+    }
+    return 0;
+}
