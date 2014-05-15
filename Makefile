@@ -2,7 +2,7 @@
 # Makefile for correlation.c
 #
 
-CC = gcc
+CC = g++
 LIBS = -lm
 
 TARGETS = correlation
@@ -10,10 +10,10 @@ TARGETS = correlation
 all: $(TARGETS)
 
 correlation: correlation.o
-	$(CC) -o $@ $(LIBS) correlation.o
+	$(CC) -o $@ $(LIBS) $<
 
 correlation.o: correlation.c correlation.h
-	$(CC) -c $(CFLAGS) correlation.c
+	$(CC) -c $(CFLAGS) correlation.cpp
 
 clean:
 	rm -f *.o $(TARGETS)
