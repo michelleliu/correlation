@@ -31,7 +31,7 @@ void split(const std::string &s, char delim, std::vector<double> &elems) {
 }
 
 bool is_in_box(double x, double y, double z, double x0, double x1, double y0, double y1, double z0, double z1) {
-    return (x > x0 && x < x1 && y > y0 && y < y1 && z > z0 && z < z1);
+    return ((x > x0) && (x < x1) && (y > y0) && (y < y1) && (z > z0) && (z < z1));
 }
 
 int get_idx(int step,int particle_idx,int k,int num_particles,int num_timesteps) {
