@@ -12,7 +12,7 @@ def plot_cv(figname):
     for i in np.arange(len(cv_files)):
         data_in=np.loadtxt(cv_files[i],skiprows=1,usecols=(0,1))
         for j in np.arange(len(data_in)):
-            data_in[:,0][j]=2*data_in[:,0][j]
+            data_in[:,0][j]=data_in[:,0][j]
         plt.plot(data_in[:,0][:100],data_in[:,1][:100],marker[i],label=fig_legend[i])
 
     plt.title("Velocity Autocorrelation Function")
@@ -27,7 +27,7 @@ def plot_rc(figname):
     for i in np.arange(len(rc_files)):
         data_in=np.loadtxt(rc_files[i],skiprows=1,usecols=(0,1))
         for j in np.arange(len(data_in)):
-            data_in[:,0][j]=2*data_in[:,0][j]
+            data_in[:,0][j]=data_in[:,0][j]
         plt.plot(data_in[:,0],data_in[:,1],marker[i],label=fig_legend[i])
 
     plt.title("Occupation Time Distribution")
@@ -42,7 +42,7 @@ def plot_msd(figname):
     for i in np.arange(len(msd_files)):
         data_in=np.loadtxt(msd_files[i],skiprows=1,usecols=(0,1))
         for j in np.arange(len(data_in)):
-            data_in[:,0][j]=2*data_in[:,0][j]
+            data_in[:,0][j]=data_in[:,0][j]
         plt.plot(data_in[:,0],data_in[:,1],marker[i],label=fig_legend[i])
 
     plt.title("Mean Square Displacement")
@@ -80,20 +80,16 @@ def plot_thermo(figname):
         plt.savefig('{0}-{1}'.format(headers[j],figname))
 
 marker=['--',':']
-fig_legend=['6.8 $\AA$','13.0 $\AA$']
-cv_files=['correlationLong/C_V_d6.8_s0_m1000_t20000_ocorr','C_V_d13.0_s0_m1000_t20000_ocorr']
-cv_files=['C_V_d13.0_s0_m1000_t20000_ocorr','npt_water/C_V_d13.0_s0_m1000_t20000_ocorr']
-plot_cv('C_V_both_long_ocorr.png')
+fig_legend=['python','c++']
+cv_files=['C_V_d13.0_s0_m200_t400_ocorr','C_V_out']
+plot_cv('C_V_test.png')
 
-msd_files=['MSD_d6.8_s0_m500_t1000']
-#plot_msd('MSD_6.8_ocorr.png')
+msd_files=['MSD_d13.0_s0_m200_t400_ocorr','MSD_out']
+plot_msd('MSD_test.png')
 
-fig_legend=['6.8 $\AA$','13.0 $\AA$']
-rc_files=['correlationLong/R_C_d6.8_s0_m1000_t20000_ocorr','R_C_d13.0_s0_m1000_t20000_ocorr']
-#plot_rc('R_C_both_long_ocorr.png')
+rc_files=['R_C_d13.0_s0_m200_t400_ocorr','R_C_out']
+plot_rc('R_C_test.png')
 
-fig_legend=['6.8 $\AA$','13.0 $\AA$']
-fig_legend=['13.0 $\AA$']
 # will plot different properties to separate image, multiple files to same plot
 # plots must have the same layout of columns...
 #thermo_files=['npt_6.8/C-walls_6.8_fix-rigid-npt_rst.o10814.log.PARSED','npt_13.0/C-walls_13.0_fix-rigid-npt_rst.o10737.log.PARSED'] # these are working

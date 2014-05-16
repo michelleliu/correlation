@@ -12,7 +12,7 @@ all: $(TARGETS)
 correlation: correlation.o
 	$(CC) -o $@ $(LIBS) $<
 
-correlation.o: correlation.c correlation.h
+correlation.o: correlation.cpp correlation.h
 	$(CC) -c $(CFLAGS) correlation.cpp
 
 clean:

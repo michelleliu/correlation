@@ -192,10 +192,10 @@ MSD=True
 num_particles=1728
 
 # set dimensions of observation box
-x0=-6.05+15
-x1=6.05+15
-y0=-5.25+15
-y1=5.25+15
+x0=-6.05
+x1=6.05
+y0=-5.25
+y1=5.25
 z0=16.1
 z1=22.90
 # x0=-6.05
@@ -229,7 +229,7 @@ if '-m' in sys.argv:
 RCoutputfile = "R_C_d{3}_s{0}_m{1}_t{2}_ocorr".format(skip_steps,max_meas_time,num_timesteps,z_dist)
 CVoutputfile = "C_V_d{3}_s{0}_m{1}_t{2}_ocorr".format(skip_steps,max_meas_time,num_timesteps,z_dist)
 logoutputfile = "log_d{3}_s{0}_m{1}_t{2}_ocorr".format(skip_steps,max_meas_time,num_timesteps,z_dist)
-MSDoutputfile = "MSD_d{3}_s{0}_m{1}_t{2}".format(skip_steps,max_meas_time,num_timesteps,z_dist)
+MSDoutputfile = "MSD_d{3}_s{0}_m{1}_t{2}_ocorr".format(skip_steps,max_meas_time,num_timesteps,z_dist)
 if '-w' in sys.argv:
     RCoutputfile = sys.argv[sys.argv.index('-w')+1]
 RCout = open(RCoutputfile, "w+")
