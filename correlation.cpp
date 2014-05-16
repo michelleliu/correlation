@@ -17,6 +17,7 @@
 #include "correlation.h"
 #include <vector>
 #include <string>
+#include <string.h>
 #include <sstream>
 
 // puts results in a pre-constructed vector
