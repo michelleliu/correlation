@@ -34,11 +34,11 @@ bool is_in_box(double x, double y, double z, double x0, double x1, double y0, do
     return ((x > x0) && (x < x1) && (y > y0) && (y < y1) && (z > z0) && (z < z1));
 }
 
-int get_idx(int step,int particle_idx,int k,int num_particles,int num_timesteps) {
+int get_idx(int step,int particle_idx,int k,int num_particles) {
     return step*num_particles*3+particle_idx*3+k;
 }
 
-int get_idx(int step,int particle_idx,int num_particles,int num_timesteps) {
+int get_idx(int step,int particle_idx,int num_particles) {
     return step*num_particles+particle_idx;
 }
 
@@ -51,7 +51,9 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         double* R, double* Cv, double* MSD, double* plot_time,
         int skip, int num_particles, int num_timesteps, int max_meas_time,
         double x0, double x1, double y0, double y1, double z0, double z1) {
-    printf("Reading %s\ntotal time %d, meas time %d, %d particles\n",&file_name[0],num_timesteps,max_meas_time,num_particles);
+    printf("Reading %s\ntotal time %d, meas time %d, %d particles\n",
+            &file_name[0],num_timesteps,max_meas_time,num_particles);
+    printf("x0 x1 y0 y1 z0 z1\n%f %f %f %f %f %f\n",x0,x1,y0,y1,z0,z1);
     using namespace std;
     filebuf file_buffer;
     string str;
@@ -108,12 +110,12 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 if (line_split[2]==2) {
 
                     particle_idx=line_split[1]-1;
-                    int my_2d_index=get_idx(step,particle_idx,num_particles,num_timesteps);
-                    int my_3d_index=get_idx(step,particle_idx,0,num_particles,num_timesteps);
+                    int my_2d_index=get_idx(step,particle_idx,num_particles);
+                    int my_3d_index=get_idx(step,particle_idx,0,num_particles);
                     //cout << "my_3d_index: " << my_3d_index << endl;
 
                     for (int k=0; k<3; ++k) {
-                        //int my_index=get_idx(step,particle_idx,k,num_particles,num_timesteps);
+                        //int my_index=get_idx(step,particle_idx,k,num_particles);
                         //cout << "my_index: " << my_index << endl;
                         positions[my_3d_index+k] = line_split[3+k];
                         velocities[my_3d_index+k] = line_split[6+k];
@@ -142,6 +144,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 line_split.clear();
             }
 
+            printf("-------------------\nmeasuring correlation at step %d\n",step);
             // computing correlation functions
             for (int step_meas=0; step_meas < min(step,max_meas_time); ++step_meas) {
                 double occu_tmp=0;
@@ -150,10 +153,10 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
 
                 int t0=step-step_meas;
                 for (int particle=0; particle < num_particles; ++particle) {
-                    int my_2d_index_t0=get_idx(t0,particle,num_particles,num_timesteps);
-                    int my_2d_index=get_idx(step,particle,num_particles,num_timesteps);
-                    int my_3d_index_t0=get_idx(t0,particle,0,num_particles,num_timesteps);
-                    int my_3d_index=get_idx(step,particle,0,num_particles,num_timesteps);
+                    int my_2d_index_t0=get_idx(t0,particle,num_particles);
+                    int my_2d_index=get_idx(step,particle,num_particles);
+                    int my_3d_index_t0=get_idx(t0,particle,0,num_particles);
+                    int my_3d_index=get_idx(step,particle,0,num_particles);
                     if (theta[my_2d_index_t0]==1) {
                         occu_tmp+=theta[my_2d_index];
 
@@ -165,6 +168,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                                 positions[my_3d_index_t0],positions[my_3d_index_t0+1],positions[my_3d_index_t0+2]);
                     }
                 }
+                printf("Found %f correlations from %d steps ago\n",occu_tmp,step_meas);
                 R[step_meas]+=occu_tmp;
                 Cv[step_meas]+=vel_tmp;
                 MSD[step_meas]+=sq_disp_tmp;
@@ -235,6 +239,9 @@ int main(int argc, const char * argv[]) {
         }
         if (strcmp("-d", argv[i])==0) {
             double z_dist = atof(argv[i+1]);
+            double z_center = 19.5;
+            z0=z_center-z_dist/2;
+            z1=z_center+z_dist/2;
         }
         if (strcmp("-m", argv[i])==0) {
             max_meas_time = atoi(argv[i+1]);
