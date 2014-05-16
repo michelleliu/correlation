@@ -4,6 +4,7 @@
 
 CC = g++
 LIBS = -lm
+CFLAGS = -std=c++11
 
 TARGETS = correlation
 

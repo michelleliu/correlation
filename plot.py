@@ -80,15 +80,15 @@ def plot_thermo(figname):
         plt.savefig('{0}-{1}'.format(headers[j],figname))
 
 marker=['--',':']
-fig_legend=['python','c++']
-cv_files=['C_V_d13.0_s0_m200_t400_ocorr','C_V_out']
-plot_cv('C_V_test.png')
+fig_legend=['bulk','confined']
+cv_files=['C_V_out_s0_m1000_t20000-neat','C_V_out_s0_m1000_t20000-confined']
+plot_cv('C_V_compare.png')
 
-msd_files=['MSD_d13.0_s0_m200_t400_ocorr','MSD_out']
-plot_msd('MSD_test.png')
+msd_files=['MSD_out_s0_m1000_t20000-neat','MSD_out_s0_m1000_t20000-confined']
+plot_msd('MSD_compare.png')
 
-rc_files=['R_C_d13.0_s0_m200_t400_ocorr','R_C_out']
-plot_rc('R_C_test.png')
+rc_files=['R_C_out_s0_m1000_t20000-neat','R_C_out_s0_m1000_t20000-confined']
+plot_rc('R_C_compare.png')
 
 # will plot different properties to separate image, multiple files to same plot
 # plots must have the same layout of columns...

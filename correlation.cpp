@@ -51,7 +51,7 @@ double sq_displacement(double x, double y, double z, double x0, double y0, doubl
 void read_traj(std::string file_name,int* theta, double* velocities, double* positions,
         double* R, double* Cv, double* MSD, double* plot_time,
         int skip, int num_particles, int num_timesteps, int max_meas_time,
-        double x0, double x1, double y0, double y1, double z0, double z1) {
+        double x0, double x1, double y0, double y1, double z0, double z1, std::string suffix) {
     printf("Reading %s\ntotal time %d, meas time %d, %d particles\n",
             &file_name[0],num_timesteps,max_meas_time,num_particles);
     printf("x0 x1 y0 y1 z0 z1\n%f %f %f %f %f %f\n",x0,x1,y0,y1,z0,z1);
@@ -145,7 +145,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 line_split.clear();
             }
 
-            printf("-------------------\nmeasuring correlation at step %d\n",step);
+            //printf("-------------------\nmeasuring correlation at step %d\n",step);
             // computing correlation functions
             for (int step_meas=0; step_meas < min(step,max_meas_time); ++step_meas) {
                 double occu_tmp=0;
@@ -169,7 +169,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                                 positions[my_3d_index_t0],positions[my_3d_index_t0+1],positions[my_3d_index_t0+2]);
                     }
                 }
-                printf("Found %f correlations from %d steps ago\n",occu_tmp,step_meas);
+                //printf("Found %f correlations from %d steps ago\n",occu_tmp,step_meas);
                 R[step_meas]+=occu_tmp;
                 Cv[step_meas]+=vel_tmp;
                 MSD[step_meas]+=sq_disp_tmp;
@@ -192,11 +192,11 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         }
 
         ofstream RCout;
-        RCout.open("R_C_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps));
+        RCout.open("R_C_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         ofstream CVout;
-        CVout.open("C_V_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps));
+        CVout.open("C_V_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         ofstream MSDout;
-        MSDout.open("MSD_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps));
+        MSDout.open("MSD_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         RCout << "t R" << endl;
         CVout << "t Cv" << endl;
         MSDout << "t MSD" << endl;
@@ -221,10 +221,10 @@ int main(int argc, const char * argv[]) {
     double* Cv;
     double* MSD;
     double* plot_time;
-    double x0=-6.05;
-    double x1=6.05;
-    double y0=-5.25;
-    double y1=5.25;
+    double x0=-6.05+15;
+    double x1=6.05+15;
+    double y0=-5.25+15;
+    double y1=5.25+15;
     double z0=16.1;
     double z1=22.90;
     int skip_steps=0;
@@ -232,6 +232,7 @@ int main(int argc, const char * argv[]) {
     int num_timesteps=200;
     int max_meas_time=100;
     clock_t start, time;
+    string suffix;
 
     string file_name=argv[argc-1];
     for (int i = 0; i < (argc-1); ++i) {
@@ -250,16 +251,18 @@ int main(int argc, const char * argv[]) {
         if (strcmp("-s", argv[i])==0) {
             skip_steps = atoi(argv[i+1]);
         }
+        if (strcmp("-e", argv[i])==0) {
+            suffix = string(argv[i+1]);
+        }
     }
     start=clock();
-    cout << max_meas_time << endl;
 
     read_traj(file_name,theta,velocities,positions,R,Cv,MSD,
             plot_time,skip_steps,num_particles,num_timesteps,max_meas_time,
-            x0,x1,y0,y1,z0,z1);
+            x0,x1,y0,y1,z0,z1,suffix);
     time=clock()-start;
     time=time/CLOCKS_PER_SEC;
-    cout << CLOCKS_PER_SEC << endl;
     cout << "Took " << time << " sec to run" << endl;
+    cout << "--------------------" << endl;
     return 0;
 }
