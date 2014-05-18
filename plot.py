@@ -79,20 +79,15 @@ def plot_thermo(figname):
         plt.draw()
         plt.savefig('{0}-{1}'.format(headers[j],figname))
 
-marker=['--',':']
-fig_legend=['bulk','confined']
-cv_files=['C_V_out_s0_m1000_t20000-neat','C_V_out_s0_m1000_t20000-confined']
-plot_cv('C_V_compare.png')
+from plotCompareForcefields5 import *
 
-msd_files=['MSD_out_s0_m1000_t20000-neat','MSD_out_s0_m1000_t20000-confined']
-plot_msd('MSD_compare.png')
-
-rc_files=['R_C_out_s0_m1000_t20000-neat','R_C_out_s0_m1000_t20000-confined']
-plot_rc('R_C_compare.png')
+plot_cv(cv_name)
+plot_msd(msd_name)
+plot_rc(rc_name)
 
 # will plot different properties to separate image, multiple files to same plot
 # plots must have the same layout of columns...
 #thermo_files=['npt_6.8/C-walls_6.8_fix-rigid-npt_rst.o10814.log.PARSED','npt_13.0/C-walls_13.0_fix-rigid-npt_rst.o10737.log.PARSED'] # these are working
 #thermo_files=['npt_6.8/C-walls_6.8_fix-rigid-npt_1fs.o10769.log.PARSED','npt_13.0/C-walls_13.0_fix-rigid-npt_1fs.o10735.log.PARSED'] # crashed
-thermo_files=['../npt_13.0/C-walls_13.0_fix-rigid-npt_1atm_298K.o11117.log.PARSED'] # crashed
+#thermo_files=['../npt_13.0/C-walls_13.0_fix-rigid-npt_1atm_298K.o11117.log.PARSED'] # crashed
 #plot_thermo('PPPM-o17777.png')

@@ -20,6 +20,8 @@
 #include <string.h>
 #include <sstream>
 
+#define OID 2
+
 // puts results in a pre-constructed vector
 
 void split(const std::string &s, char delim, std::vector<double> &elems) {
@@ -51,7 +53,8 @@ double sq_displacement(double x, double y, double z, double x0, double y0, doubl
 void read_traj(std::string file_name,int* theta, double* velocities, double* positions,
         double* R, double* Cv, double* MSD, double* plot_time,
         int skip, int num_particles, int num_timesteps, int max_meas_time,
-        double x0, double x1, double y0, double y1, double z0, double z1, std::string suffix) {
+        double x0, double x1, double y0, double y1, double z0, double z1, std::string suffix,
+        int O_id) {
     printf("Reading %s\ntotal time %d, meas time %d, %d particles\n",
             &file_name[0],num_timesteps,max_meas_time,num_particles);
     printf("x0 x1 y0 y1 z0 z1\n%f %f %f %f %f %f\n",x0,x1,y0,y1,z0,z1);
@@ -108,7 +111,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 //cout << str << endl;
 
                 // check atom is oxygen
-                if (line_split[2]==2) {
+                if (line_split[2]==OID) {
 
                     particle_idx=line_split[1]-1;
                     int my_2d_index=get_idx(step,particle_idx,num_particles);
@@ -192,11 +195,11 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         }
 
         ofstream RCout;
-        RCout.open("R_C_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        RCout.open("results/R_C_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         ofstream CVout;
-        CVout.open("C_V_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        CVout.open("results/C_V_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         ofstream MSDout;
-        MSDout.open("MSD_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        MSDout.open("results/MSD_out_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
         RCout << "t R" << endl;
         CVout << "t Cv" << endl;
         MSDout << "t MSD" << endl;
@@ -231,6 +234,7 @@ int main(int argc, const char * argv[]) {
     int num_particles=1728;
     int num_timesteps=200;
     int max_meas_time=100;
+    int O_id=2;
     clock_t start, time;
     string suffix;
 
@@ -254,12 +258,15 @@ int main(int argc, const char * argv[]) {
         if (strcmp("-e", argv[i])==0) {
             suffix = string(argv[i+1]);
         }
+        if (strcmp("-o", argv[i])==0) {
+            O_id = atoi(argv[i+1]);
+        }
     }
     start=clock();
 
     read_traj(file_name,theta,velocities,positions,R,Cv,MSD,
             plot_time,skip_steps,num_particles,num_timesteps,max_meas_time,
-            x0,x1,y0,y1,z0,z1,suffix);
+            x0,x1,y0,y1,z0,z1,suffix,O_id);
     time=clock()-start;
     time=time/CLOCKS_PER_SEC;
     cout << "Took " << time << " sec to run" << endl;
