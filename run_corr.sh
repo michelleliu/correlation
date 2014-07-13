@@ -8,8 +8,8 @@ sep=13.0
 inp_file=../npt_13.0/q-compute_58731.out
 inp_file=../npt_13.0/mu-13.0-4ns-1728wat.out
 suffix=c13-4ns
-#./correlation -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles $inp_file
-#./dipole -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles $inp_file
+#./bin/correlation -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles $inp_file
+#./bin/dipole -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles $inp_file
 
 #inp_file=../npt_9.8/q_C-walls_9.8-npt_1atm_298K.t36084.traj
 inp_file=../npt_9.8/q-compute_9.8_58737
@@ -29,4 +29,4 @@ suffix=spce-4ns
 num_particles=1728
 sep=13
 oid=2
-./hbonds -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -C $inp_file
+./bin/hbonds -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -C $inp_file
