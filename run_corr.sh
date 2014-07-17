@@ -1,6 +1,6 @@
 skip=0
 total_time=$1 #4000000
-meas_time=4000 #50000
+meas_time=$2 #50000
 num_particles=1728
 
 sep=13.0
@@ -29,4 +29,12 @@ suffix=spce-4ns
 num_particles=1728
 sep=13
 oid=2
-./bin/hbonds -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -C $inp_file
+#./bin/hbonds -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -C $inp_file
+
+
+inp_file=../npt_coarse/coarse_walls_13.0_npt_1atm_298K.t121326.traj
+suffix=spce-coarse-13
+num_particles=432
+sep=13.0
+oid=1
+./bin/correlation -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid $inp_file

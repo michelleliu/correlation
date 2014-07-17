@@ -7,4 +7,4 @@
 #$ -N corr_fun
 #$ -o log/$JOB_NAME.o$JOB_ID.log
 
-./run_corr.sh
+./run_corr.sh 10000 5000
