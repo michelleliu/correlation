@@ -88,6 +88,6 @@ from CompareDist import *
 # will plot different properties to separate image, multiple files to same plot
 # plots must have the same layout of columns...
 #thermo_files=['../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114612.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114614.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114615.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114616.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114617.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114618.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114619.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114620.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o114621.log.PARSED' ,'../npt_coarse/coarse_walls_13.0_npt_1atm_298K.o117313.log.PARSED']
-thermo_files=['../coarse_9.8/coarse_walls_9.8_npt_1atm_298K.o135136.log.PARSED']
+thermo_files=['../coarse_9.8/coarse_walls_9.8_npt_1atm_298K.o142062.log.PARSED','../coarse_9.8/coarse_walls_9.8_npt_1atm_298K.o142065.log.PARSED']
 fig_legend=['1','2','3','4','5','6','7','8','9','10']
 plot_thermo('spce-coarse-9.8.png')

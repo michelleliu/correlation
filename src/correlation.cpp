@@ -27,7 +27,7 @@
 void read_traj(std::string file_name,int* theta, double* velocities, double* positions,
         double* R, double* Cv, double* Cv_int, double* MSD, double* Cm,
         double* mu, double* Mnet, double* plot_time, double* full_time,
-        int skip, int num_particles, int num_timesteps, int max_meas_time,
+        int skip, int dump_time, int num_particles, int num_timesteps, int max_meas_time,
         double x0, double x1, double y0, double y1, double z0, double z1,
         std::string suffix, int O_id, bool VERBOSE) {
     // requires that lammps trajectory be of the following format(ish):
@@ -78,10 +78,10 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         int current_time;
 
         // for dipole
-        mu=(double*) malloc(3*num_particles*num_timesteps*sizeof(double)); // molecular dipoles
-        Mnet=(double*) malloc(3*num_timesteps*sizeof(double)); // net dipole of confined region
-        Cm=(double*) malloc(max_meas_time*sizeof(double)); // dipole-dipole correlation
-        double q;
+        //mu=(double*) malloc(3*num_particles*num_timesteps*sizeof(double)); // molecular dipoles
+        //Mnet=(double*) malloc(3*num_timesteps*sizeof(double)); // net dipole of confined region
+        //Cm=(double*) malloc(max_meas_time*sizeof(double)); // dipole-dipole correlation
+        //double q;
 
         // seek to beginning of file
         file_stream.seekg(0, file_stream.beg);
@@ -107,10 +107,10 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 {
                     particle_idx=line_split[1]-1; // starts at 0
                     int my_3d_index=get_idx(step,particle_idx,0,num_particles);
-                    q=line_split[9];
-                    for (int k=0; k<3; ++k) {
-                        mu[my_3d_index+k] += q*line_split[3+k]; // xyz components of dipole
-                    }
+                    //q=line_split[9];
+                    //for (int k=0; k<3; ++k) {
+                    //    mu[my_3d_index+k] += q*line_split[3+k]; // xyz components of dipole
+                    //}
                 }
 
                 // check atom is oxygen
@@ -120,12 +120,12 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                     int my_2d_index=get_idx(step,particle_idx,num_particles);
                     int my_3d_index=get_idx(step,particle_idx,0,num_particles);
 
-                    q=line_split[9]; // dipole
+                    //q=line_split[9]; // dipole
 
                     for (int k=0; k<3; ++k) {
                         positions[my_3d_index+k] = line_split[3+k];
                         velocities[my_3d_index+k] = line_split[6+k];
-                        mu[my_3d_index+k] += q*line_split[3+k]; // xyz components of dipole
+                        //mu[my_3d_index+k] += q*line_split[3+k]; // xyz components of dipole
 
                     }
                     // check if water is in confined space
@@ -152,16 +152,16 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
             }
 
             // calculating net dipole for confined region
-            for (int particle=0; particle < num_particles; ++particle) {
-                    int my_2d_index=get_idx(step,particle,num_particles);
-                    int my_3d_index=get_idx(step,particle,0,num_particles);
-                    if (theta[my_2d_index]==1) {
-                        for (int k=0; k<3; ++k) {
-                            Mnet[3*step+k] += mu[my_3d_index+k];
-                        }
-                    }
+            //for (int particle=0; particle < num_particles; ++particle) {
+            //        int my_2d_index=get_idx(step,particle,num_particles);
+            //        int my_3d_index=get_idx(step,particle,0,num_particles);
+            //        if (theta[my_2d_index]==1) {
+            //            for (int k=0; k<3; ++k) {
+            //                Mnet[3*step+k] += mu[my_3d_index+k];
+            //            }
+            //        }
 
-            }
+            //}
 
             if (VERBOSE) {
                 printf("-------------------\nmeasuring correlation at step %d\n",step);
@@ -173,9 +173,9 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                 double sq_disp_tmp=0;
 
                 int t0=step-step_meas;
-                for (int k=0; k<3; ++k) {
-                    Cm[step_meas]+=Mnet[3*step+k]*Mnet[3*t0+k];
-                }
+                //for (int k=0; k<3; ++k) {
+                //    Cm[step_meas]+=Mnet[3*step+k]*Mnet[3*t0+k];
+                //}
                 for (int particle=0; particle < num_particles; ++particle) {
                     // initial and current 2-D times
                     int my_2d_index_t0=get_idx(t0,particle,num_particles);
@@ -209,7 +209,6 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         // normalizing R, Cv, and MSD
         int t0_max;
         double omega;
-        int dump_time=20;
         printf("Pre-normalization R: [");
         for (int i=0; i<29; ++i) {
             printf("%f, ",R[i]);
@@ -254,32 +253,38 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
 
 
         ofstream RCout;
-        RCout.open("results/R_C_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        RCout.open("results/R_C-"+suffix+"-w"+to_string(num_particles)+"_m"+to_string(max_meas_time)
+                +"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
         ofstream CVout;
-        CVout.open("results/C_V_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        CVout.open("results/C_V-"+suffix+"-w"+to_string(num_particles)+"_m"+to_string(max_meas_time)
+                +"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
         ofstream MSDout;
-        MSDout.open("results/MSD_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        ofstream CMout;
-        CMout.open("results/C_M_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        ofstream MNETout;
-        MNETout.open("results/Mnet_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
+        MSDout.open("results/MSD-"+suffix+"-w"+to_string(num_particles)+"_m"+to_string(max_meas_time)
+                +"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+        //ofstream CMout;
+        //CMout.open("results/C_M-"+suffix+"-w"+to_string(num_particles)+"_m"+to_string(max_meas_time)
+        //        +"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+        //ofstream MNETout;
+        //MNETout.open("results/Mnet-"+suffix+"-w"+to_string(num_particles)+"_m"+to_string(max_meas_time)
+        //        +"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
         RCout << "#t R" << endl;
         CVout << "#t Cv" << endl;
         MSDout << "#t MSD" << endl;
-        CMout << "#t Cm" << endl;
+        //CMout << "#t Cm" << endl;
         for (int i=0; i< max_meas_time; ++i) {
             RCout << plot_time[i] << " " << R[i] << endl;
             CVout << plot_time[i] << " " << Cv[i] << endl;
             MSDout << plot_time[i] << " " << MSD[i] << endl;
-            CMout << plot_time[i] << " " << Cm[i] << endl;
+            //CMout << plot_time[i] << " " << Cm[i] << endl;
         }
-        for (int i=0; i< num_timesteps; ++i) {
-            MNETout << full_time[i] << " " << Mnet[3*i+0] << " " << Mnet[3*i+1] << " " << Mnet[3*i+2] << endl;
-        }
+        //for (int i=0; i< num_timesteps; ++i) {
+        //    MNETout << full_time[i] << " " << Mnet[3*i+0] << " " << Mnet[3*i+1] << " " << Mnet[3*i+2] << endl;
+        //}
         RCout.close();
         CVout.close();
         MSDout.close();
-        CMout.close();
+        //CMout.close();
+        //MNETout.close();
         file_buffer.close();
     }
     else {
@@ -311,6 +316,7 @@ int main(int argc, const char * argv[]) {
     int num_particles=1000;
     int num_timesteps=200;
     int max_meas_time=100;
+    int dump_time=20;
     int O_id=2;
     clock_t start, time;
     string suffix;
@@ -332,6 +338,9 @@ int main(int argc, const char * argv[]) {
         }
         if (strcmp("-s", argv[i])==0) {
             skip_steps = atoi(argv[i+1]);
+        }
+        if (strcmp("-r", argv[i])==0) {
+            dump_time = atoi(argv[i+1]);
         }
         if (strcmp("-e", argv[i])==0) {
             suffix = string(argv[i+1]);
@@ -355,8 +364,10 @@ int main(int argc, const char * argv[]) {
     }
     start=clock();
 
-    read_traj(file_name,theta,velocities,positions,R,Cv,Cv_int,MSD,Cm,mu,Mnet,
-            plot_time,full_time,skip_steps,num_particles,num_timesteps,max_meas_time,
+    read_traj(file_name,theta,velocities,positions,
+            R,Cv,Cv_int,MSD,Cm,mu,Mnet,
+            plot_time,full_time,skip_steps,dump_time,
+            num_particles,num_timesteps,max_meas_time,
             x0,x1,y0,y1,z0,z1,suffix,O_id,VERBOSE);
     time=clock()-start;
     time=time/CLOCKS_PER_SEC;

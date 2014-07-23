@@ -185,7 +185,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         std::vector<int>** bins, int mb, int nb,
         double oo_cutoff, double oh_cutoff, double phi_cutoff, hbond_map* hbonds,
         double* plot_time, double* full_time,
-        int skip, int num_particles, int num_timesteps, int max_meas_time,
+        int skip, int dump_time, int num_particles, int num_timesteps, int max_meas_time,
         double x0, double x1, double y0, double y1, double z0, double z1,
         std::string suffix, int O_id, bool VERBOSE) {
 
@@ -501,7 +501,8 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         for (int i=0;i<(hbonds)->size(); ++i) {
 
             vector<int>* this_hbond = (itr->second);
-            int previous;
+            int previous=-20;
+            int current=-10;
             int lifetime=0;
 
             //for (int j=0; j<this_hbond->size(); ++j) {
@@ -511,13 +512,23 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             for (int step_meas=0; step_meas<max_meas_time; ++step_meas) {
                 //printf("correlation for step_meas %d\n",step_meas);
                 for (int j=0; j<this_hbond->size(); ++j) {
-                    int t0=this_hbond->at(j)-step_meas;
+                    current=this_hbond->at(j);
+                    assert(current>=0);
+                    if ( (current-1) == previous ) {
+                        lifetime+=1;
+                    } else {
+                        hb_lifetimes->push_back(lifetime);
+                        lifetime=0;
+                    }
+                    int t0=current-step_meas;
                     //vector<int>::iterator it;
                     //it = find(this_hbond->begin(),this_hbond->end(),t0);
                     if (binary_search(this_hbond->begin(),this_hbond->end(),t0)) {
                         Ch[step_meas]+=1;
                         //printf("found correlation\n");
                     }
+                    previous=current;
+                    current=-10;
                 }
             }
             itr = next(itr);
@@ -525,7 +536,22 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
 
         // diagnostics
 
+        int max_lifetime=0;
+        int min_lifetime=100000;
+
+        double sum=0;
+        for (int i=0; i<hb_lifetimes->size(); ++i) {
+            if (hb_lifetimes->at(i)>max_lifetime) {
+                max_lifetime = hb_lifetimes->at(i);
+            } else if (hb_lifetimes->at(i)<min_lifetime) {
+                min_lifetime = hb_lifetimes->at(i);
+            }
+            sum+=hb_lifetimes->at(i);
+        }
+        double avg_lifetime=1.0*sum/hb_lifetimes->size();
+
         printf("%d unique hbonds found\n",(hbonds)->size());
+        printf("average lifetime: %f\n",avg_lifetime);
         printf("hbonds over time (%d steps):\n", num_timesteps);
         for (int i=0; i<num_timesteps; ++i) {
             printf("step %d, %d hbonds\n",i,num_hbonds[i]);
@@ -538,7 +564,6 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         // normalizing R, Cv, and MSD
         int t0_max;
         //double omega;
-        int dump_time=20;
 
         if (VERBOSE) {
             printf("Theta final: [");
@@ -554,7 +579,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         printf("N_occu_ave = %f\n",N_occu_ave);
         for (int i=0; i<max_meas_time; ++i) {
             t0_max=num_timesteps-i;
-            Ch[i]=Ch[i]/t0_max; // normalizing Ch
+            Ch[i]=Ch[i]/t0_max/num_particles; // normalizing Ch
             if (VERBOSE) {
                 printf("%d\n",t0_max);
             }
@@ -571,26 +596,20 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         }
 
         // FIXME
-        //   ofstream RCout;
-        //   RCout.open("results/R_C_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        //   ofstream CVout;
-        //   CVout.open("results/C_V_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        //   ofstream MSDout;
-        //   MSDout.open("results/MSD_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        //   ofstream CMout;
-        //   CMout.open("results/C_M_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        //   ofstream MNETout;
-        //   MNETout.open("results/Mnet_out_w"+to_string(num_particles)+"_s"+to_string(skip)+"_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"-"+suffix);
-        //   RCout << "#t R" << endl;
-        //   CVout << "#t Cv" << endl;
-        //   MSDout << "#t MSD" << endl;
-        //   CMout << "#t Cm" << endl;
-        //   for (int i=0; i< max_meas_time; ++i) {
-        //       RCout << plot_time[i] << " " << R[i] << endl;
-        //       CVout << plot_time[i] << " " << Cv[i] << endl;
-        //       MSDout << plot_time[i] << " " << MSD[i] << endl;
-        //       CMout << plot_time[i] << " " << Cm[i] << endl;
-        //   }
+           ofstream CHout;
+           CHout.open("results/C_H-"+suffix+"-w"+to_string(num_particles)+"_s"+to_string(skip)+
+                   "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+           ofstream HBout;
+           HBout.open("results/H_B-"+suffix+"-w"+to_string(num_particles)+"_s"+to_string(skip)+
+                   "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+           CHout << "#t Ch" << endl;
+           for (int i=0; i< max_meas_time; ++i) {
+               CHout << plot_time[i] << " " << Ch[i] << endl;
+           }
+           HBout << "#t hbonds" << endl;
+           for (int i=0; i< num_timesteps; ++i) {
+               HBout << full_time[i] << " " << num_hbonds[i] << endl;
+           }
         file_buffer.close();
     }
     else {
@@ -624,6 +643,7 @@ int main(int argc, const char * argv[]) {
     int num_particles=1000;
     int num_timesteps=200;
     int max_meas_time=100;
+    int dump_time=20;
     int O_id=2;
     clock_t start, time;
     string suffix;
@@ -672,6 +692,9 @@ int main(int argc, const char * argv[]) {
         if (strcmp("-o", argv[i])==0) {
             O_id = atoi(argv[i+1]);
         }
+        if (strcmp("-r", argv[i])==0) {
+            dump_time = atoi(argv[i+1]);
+        }
         if (strcmp("-w", argv[i])==0) {
             num_particles = atoi(argv[i+1]);
         }
@@ -704,7 +727,8 @@ int main(int argc, const char * argv[]) {
             positions,h_positions,
             bins, mb, nb,
             oo_cutoff, oh_cutoff, phi_cutoff,&hbonds,
-            plot_time,full_time,skip_steps,num_particles,num_timesteps,max_meas_time,
+            plot_time,full_time,skip_steps,dump_time,
+            num_particles,num_timesteps,max_meas_time,
             x0,x1,y0,y1,z0,z1,suffix,O_id,VERBOSE);
     time=clock()-start;
     time=time/CLOCKS_PER_SEC;

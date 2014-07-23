@@ -9,13 +9,13 @@ import sys
 
 read_in_vals = [0,1,2,3,4,5,6]
 
-file_to_read = '../coarse_9.8/coarse_walls_9.8_npt_1atm_298K.o135136.log'
+file_to_read = '../coarse_9.8/coarse_walls_9.8_npt_1atm_298K.o142062.log'
 time_start=0
 time_stop=200000
 step_diff=100
 num_lines=1
 total_steps = (time_stop-time_start)/step_diff/num_lines
-MINIM=True
+MINIM=False
 
 file_to_write = '{0}.PARSED'.format(file_to_read)
 data = open(file_to_read)
