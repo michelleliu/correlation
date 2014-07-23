@@ -21,7 +21,11 @@
 *.i*86
 *.x86_64
 *.hex
+
+*.pyc
 bin/
 fig/
 thermo/
 results/
+log/
+output-hb/
