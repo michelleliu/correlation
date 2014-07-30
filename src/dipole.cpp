@@ -20,7 +20,9 @@
 #include <sstream>
 #include "common.h"
 
-void read_dipole(std::string file_name, double* positions, double* Cm,
+#define PI 3.14159265359
+
+void read_dipole(std::string file_name, double* Cm,
         double* Mnet, double* plot_time, double* full_time,
         int num_particles, int num_timesteps, int max_meas_time,
         std::string suffix) {
@@ -52,14 +54,26 @@ void read_dipole(std::string file_name, double* positions, double* Cm,
         full_time=(double*) malloc(num_timesteps*sizeof(double));
         Mnet=(double*) malloc(3*num_timesteps*sizeof(double)); // net dipole of confined region
         Cm=(double*) malloc(max_meas_time*sizeof(double)); // dipole-dipole correlation
+
         double q_hydrogen=0.4238;
         double q_oxygen=-0.8476;
+        double Mave [3];
+        double Mfluc [3];
+        double Msum [3];
+        double exp [3];
+        for (int i=0; i<3; ++i) {
+            Msum[i]=0;
+            exp[i]=0;
+            Mfluc[i]=0;
+        }
 
         for (int step=0; step<num_timesteps;++step) {
             getline(file_stream,str);
             split(str,' ',line_split);
             //printf("%f %f %f %f %f %f %f\n",line_split[0],line_split[1],line_split[2],line_split[3],line_split[4],line_split[5],line_split[6]);
             for (int k=0; k<3; ++k) {
+                Msum[k]+=q_oxygen*line_split[1+k];
+                Msum[k]+=q_hydrogen*line_split[4+k];
                 Mnet[3*step+k]+=q_oxygen*line_split[1+k];
                 Mnet[3*step+k]+=q_hydrogen*line_split[4+k];
             }
@@ -73,6 +87,35 @@ void read_dipole(std::string file_name, double* positions, double* Cm,
                 }
             }
         }
+
+        for (int i=0; i<3; ++i) {
+            Mave[i]=Msum[i]/num_timesteps;
+        }
+
+        double delta=0;
+        for (int i=0; i<num_timesteps; ++i) {
+            for (int k=0; k<3; ++k) {
+                delta=Mnet[3*i+k]-Mave[i];
+                exp[i]+=delta/num_timesteps; // E[x-xave]
+                Mfluc[i]+=delta*delta/num_timesteps; // E[(x-xave)^2]
+            }
+        }
+
+        for (int i=0; i<3; ++i) {
+            Mfluc[i]=Mfluc[i]-exp[i]*exp[i];
+        }
+
+        double epsilon [3];
+        // FIXME: UNITS !!!!!!
+        double Vol=5.12940e4; // in AA^3
+        double kB=1.38065e-3; // in angstroms
+        double T=298; // K
+        for (int i=0; i<3; ++i) {
+            epsilon[i]=1+4.0*PI*Mfluc[i]/(Vol*kB*T);
+        }
+
+        printf("dielectric tensors:\n  %f\n  %f\n  %f\n",epsilon[0],epsilon[1],epsilon[2]);
+
         // normalizing
         int t0_max;
         int dump_time=20;
@@ -110,23 +153,22 @@ void read_dipole(std::string file_name, double* positions, double* Cm,
 int main(int argc, const char * argv[]) {
     using namespace std;
     int* theta;
-    double* velocities;
-    double* positions;
-    double* R;
-    double* Cv;
-    double* Cv_int;
+
     double* MSD;
     double* Cm;
     double* Mnet;
     double* mu;
+
     double* plot_time;
     double* full_time;
+
     double x0=-6.05;
     double x1=6.05;
     double y0=-5.25;
     double y1=5.25;
     double z0=16.1;
     double z1=22.90;
+
     int skip_steps=0;
     int num_particles=1000;
     int num_timesteps=200;
@@ -170,7 +212,7 @@ int main(int argc, const char * argv[]) {
     }
     start=clock();
 
-    read_dipole(file_name,positions,Cm,Mnet,plot_time,full_time,
+    read_dipole(file_name,Cm,Mnet,plot_time,full_time,
             num_particles,num_timesteps,max_meas_time,suffix);
 
     time=clock()-start;

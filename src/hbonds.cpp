@@ -625,20 +625,24 @@ int main(int argc, const char * argv[]) {
     double* h_positions;
     double* plot_time;
     double* full_time;
+
     double oo_cutoff=5.00; // FIXME read in from arguments
     double oh_cutoff=3.6;
     double phi_cutoff=150;
+
     double x0=-6.05;
     double x1=6.05;
     double y0=-5.25;
     double y1=5.25;
     double z0=16.1;
     double z1=22.90;
+
     // FIXME: read in box width and box height from the file
     //double box_width=18.6269*2;
     double box_width=9.29072*2;
     //double box_height=18.6269*2;
     double box_height=9.29072*2;
+
     int skip_steps=0;
     int num_particles=1000;
     int num_timesteps=200;
