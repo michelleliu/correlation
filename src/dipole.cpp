@@ -58,11 +58,20 @@ void read_dipole(std::string file_name, double* Cm,
         double q_hydrogen=0.4238;
         double q_oxygen=-0.8476;
         double Mave [3];
+        double Msqave [3];
         double Mfluc [3];
         double Msum [3];
+        double Msqsum [3];
         double exp [3];
+        double Msqtot=0;
+        double Mexptot=0;
+        double Mtotfluc=0;
+        double Vol=0;
+        double Volsq=0;
+        double Temp=0;
         for (int i=0; i<3; ++i) {
             Msum[i]=0;
+            Msqsum[i]=0;
             exp[i]=0;
             Mfluc[i]=0;
         }
@@ -72,10 +81,22 @@ void read_dipole(std::string file_name, double* Cm,
             split(str,' ',line_split);
             //printf("%f %f %f %f %f %f %f\n",line_split[0],line_split[1],line_split[2],line_split[3],line_split[4],line_split[5],line_split[6]);
             for (int k=0; k<3; ++k) {
-                Msum[k]+=q_oxygen*line_split[1+k];
-                Msum[k]+=q_hydrogen*line_split[4+k];
-                Mnet[3*step+k]+=q_oxygen*line_split[1+k];
-                Mnet[3*step+k]+=q_hydrogen*line_split[4+k];
+                double ox_contribution = q_oxygen*line_split[1+k];
+                double hy_contribution = q_hydrogen*line_split[4+k];
+                //printf("Net dipole: %f\n",ox_contribution+hy_contribution);
+                Msum[k]=Msum[k]+ox_contribution+hy_contribution;
+                Msqsum[k]=Msqsum[k]+(ox_contribution+hy_contribution)*(ox_contribution+hy_contribution);
+                Msqtot=Msqtot+(ox_contribution+hy_contribution)*(ox_contribution+hy_contribution);
+                Mnet[3*step+k]+=ox_contribution;
+                Mnet[3*step+k]+=hy_contribution;
+            }
+            if (line_split.size() > 7) {
+                Vol+=line_split[7];
+                Volsq+=line_split[7]*line_split[7];
+                Temp+=line_split[8];
+            } else {
+                printf("Error! No volume or temperature output\n");
+                exit(1);
             }
             line_split.clear();
             // calculating correlation
@@ -88,33 +109,68 @@ void read_dipole(std::string file_name, double* Cm,
             }
         }
 
+        // correction to get averages
+        Msqtot=Msqtot/num_timesteps;
         for (int i=0; i<3; ++i) {
             Mave[i]=Msum[i]/num_timesteps;
+            Msqave[i]=Msqsum[i]/num_timesteps;
+            printf("Mave[%d] = %f\n",i,Mave[i]);
+            printf("Msqave[%d] = %f\n",i,Msqave[i]);
         }
 
-        double delta=0;
-        for (int i=0; i<num_timesteps; ++i) {
-            for (int k=0; k<3; ++k) {
-                delta=Mnet[3*i+k]-Mave[i];
-                exp[i]+=delta/num_timesteps; // E[x-xave]
-                Mfluc[i]+=delta*delta/num_timesteps; // E[(x-xave)^2]
-            }
-        }
+        Vol=1.0*Vol/num_timesteps;
+        Volsq=1.0*Volsq/num_timesteps;
+        Temp=1.0*Temp/num_timesteps;
+
+        Mexptot=Mave[0]*Mave[0]+Mave[1]*Mave[1]+Mave[2]*Mave[2];
+
+        //double delta=0;
+        //for (int i=0; i<num_timesteps; ++i) {
+        //    for (int k=0; k<3; ++k) {
+        //        delta=Mnet[3*i+k]-Mave[i];
+        //        exp[k]+=delta/num_timesteps; // E[x-xave]
+        //        Mfluc[k]+=delta*delta/num_timesteps; // E[(x-xave)^2]
+        //    }
+        //}
+
+        //for (int i=0; i<3; ++i) {
+        //    Mfluc[i]=Mfluc[i]-exp[i]*exp[i];
+        //    Mfluc[i]=Mfluc[i]*1.0e-10; // in q*m
+        //}
 
         for (int i=0; i<3; ++i) {
-            Mfluc[i]=Mfluc[i]-exp[i]*exp[i];
+            Mfluc[i]=Msqave[i]-Mave[i];
+            //Mfluc[i]=Mfluc[i]*(1.0e-20)*(1.60218e-19)*(1.60218e-19); // in (q*m)^2
+            printf("Mfluc[%d] = %f\n",i,Mfluc[i]);
         }
+        Mtotfluc=Msqtot-Mexptot;
 
-        double epsilon [3];
+        long double epsilontot=0;
+        long double epsilon [3];
         // FIXME: UNITS !!!!!!
-        double Vol=5.12940e4; // in AA^3
-        double kB=1.38065e-3; // in angstroms
-        double T=298; // K
+        Vol=Vol*1.0e-24; // from AA^3 to cm^3
+        Volsq=Volsq*1.0e-24*1.0e-24;
+        //long double V=5.12940e-20; // in cm^3 // this was just a placeholder
+        long double kB=1.38065e-16; // in cgs
+        //double T=298; // K
         for (int i=0; i<3; ++i) {
-            epsilon[i]=1+4.0*PI*Mfluc[i]/(Vol*kB*T);
+            epsilon[i]=1+(4.0*PI*Mfluc[i]*(1.0e-16)*(3*1.60218e-10)*(3*1.60218e-10))/(Vol*kB*Temp);
         }
+        epsilontot=1+(4.0*PI*Mtotfluc*(1.0e-16)*(3*1.60218e-10)*(3*1.60218e-10))/(3*Vol*kB*Temp);
 
-        printf("dielectric tensors:\n  %f\n  %f\n  %f\n",epsilon[0],epsilon[1],epsilon[2]);
+        kB=1.38065e-23; // now in SI units
+        Vol=Vol*1.0e-6; // in SI (m^3)
+        Volsq=Volsq*1.0e-6*1.0e-6;
+        long double kappa = (Volsq - Vol*Vol)/(kB*Temp*Vol);
+        kappa=kappa/(9.86923e-6); // converting from Pa^-1 to atm^-1
+
+
+        printf("dielectric tensors:\n  %Lf\n  %Lf\n  %Lf\n",epsilon[0],epsilon[1],epsilon[2]);
+        printf("total dielectric:   %Lf\n",epsilontot);
+        printf("Volsq:  %e    Vol:  %e\n",Volsq,Vol);
+        //printf("Volsq - Vol*Vol:  %e\n",Volsq - Vol*Vol);
+        printf("Temp:   %f\n",Temp);
+        printf("isothermal compressibility:   %Le\n",kappa);
 
         // normalizing
         int t0_max;

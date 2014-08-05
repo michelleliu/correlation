@@ -215,10 +215,15 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         int particle_idx;
         int atom_idx;
 
+        // how indexing works:
         // m x n, array[i][j] = array[i*m + j]
         // l x m x n, array[i][j][k] = array[i*l*m + j*m + k]
         theta=(int*) malloc(num_particles*num_timesteps*sizeof(int));
         Ch=(double*) malloc(max_meas_time*sizeof(double));
+
+        double* Lh;
+        int num_life_bins=10;
+        Lh=(double*) malloc(num_life_bins*sizeof(double));
 
         if (VERBOSE) {
             printf("Theta initial: [");
@@ -252,20 +257,20 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         // seek to beginning of file
         file_stream.seekg(0, file_stream.beg);
         double xmin, xmax, ymin, ymax, zmin, zmax;
-        int hbonds_this_step;
+
+        // begin reading timesteps
         for (int step=0; step<num_timesteps;++step) {
-            printf("-----------\n");
-            printf("Beginning step %d\n",step);
+            //printf("-----------\n");
+            //printf("Beginning step %d\n",step);
             file_stream.ignore(1000,'\n');
             getline(file_stream,str);
             current_time=stoi(str);
-            printf("TIMESTEP: %d\n",current_time);
+            //printf("TIMESTEP: %d\n",current_time);
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
-            //file_stream.ignore(1000,'\n');
-            //file_stream.ignore(1000,'\n');
-            //file_stream.ignore(1000,'\n');
+
+            // read box bounds
             getline(file_stream,str);
             split(str,' ',line_split);
             xmin=line_split[0];
@@ -278,13 +283,14 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             split(str,' ',line_split);
             zmin=line_split[0];
             zmax=line_split[1];
+
             file_stream.ignore(1000,'\n');
 
+            // calculate box size
             double x_width=xmax-xmin;
             double y_width=ymax-ymin;
             double z_width=zmax-zmin;
-            printf("x,y,z dimensions: %f %f %f\n",x_width,y_width,z_width);
-            hbonds_this_step=0;
+            //printf("x,y,z dimensions: %f %f %f\n",x_width,y_width,z_width);
 
             for (int atom=0; atom<num_atoms; ++atom) {
                 getline(file_stream,str);
@@ -326,6 +332,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                     if (check_in_box(positions[my_3d_index],positions[my_3d_index+1],positions[my_3d_index+2],
                                 x0,x1,y0,y1,z0,z1) )
                     {
+                        // FIXME: currently this check is not used for anything
                         if (VERBOSE) {
                             printf("I'm in the box at step %d, "
                                     "coordinates %f %f %f, "
@@ -342,8 +349,8 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 }
                 line_split.clear();
             }
-            printf("finished reading atoms\n");
-            printf("finished binning particles\n");
+            //printf("finished reading atoms\n");
+            //printf("finished binning particles\n");
             //printf("bin 5 has %d waters:\n",bins[5]->size());
             //for (int i=0; i<bins[5]->size(); ++i) {
             //    printf("%d\n", bins[5]->at(i));
@@ -355,17 +362,15 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             }
 
 
-            // check whether iterated through this pair of bins yet
+            // check_pair tells whether iterated through this pair of bins yet
             vector<bool> check_pair(mb*mb*nb*mb*mb*nb);
             for (int i = 0; i < (mb*mb*nb*mb*mb*nb); ++i) {
-                check_pair[i]=0;
-                //printf("%d, ",check_pair[i]);
+                check_pair[i]=0; // set all to False initially
             }
-            //printf("\n");
-            printf("finished initializing check_pair\n");
+            //printf("finished initializing check_pair\n");
 
             // iterate through bins to find neighbors
-            printf("there are %d bins\n",nb*mb*mb);
+            //printf("there are %d bins\n",nb*mb*mb);
             for (int i = 0; i < (nb*mb*mb) ; ++i) { // for all bins (outermost)
                 vector<int>* this_bin = bins[i];
                 vector<tuple<int, int, int> > neighbors;
@@ -376,7 +381,6 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 //        get<0>(my_block_id), get<1>(my_block_id), get<2>(my_block_id), this_bin->size(), neighbors.size());
 
                 for (int k = 0; k < neighbors.size(); ++k) { // iterate over neighbor bins
-                    //printf("nbr: %d\n",k);
                     int neigh_bin_idx = get_bin_idx(neighbors[k], mb, nb);
                     //printf("nbr %d, neigh_bin_idx: %d, neigh_block_id %d %d %d\n", k,
                     //        neigh_bin_idx, get<0>(neighbors[k]), get<1>(neighbors[k]), get<2>(neighbors[k]));
@@ -406,7 +410,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                                         x_width, y_width, z_width );
                                 if (r_oioj < oo_cutoff) {
                                     //printf("%d and %d are neighbors\n",this_bin->at(jj),neighbor_bin->at(ii));
-                                    nbr_particle_list[this_bin->at(jj)]->push_back(neighbor_bin->at(ii)); // FIXME to add simultaneously to both nbr lists (fix nbr bins)
+                                    nbr_particle_list[this_bin->at(jj)]->push_back(neighbor_bin->at(ii));
                                     nbr_particle_list[neighbor_bin->at(ii)]->push_back(this_bin->at(jj));
                                 }
                             }
@@ -415,18 +419,14 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 }
                 neighbors.clear();
             }
-            printf("finished building neighbor lists\n");
+            //printf("finished iterating through bins; neighbor lists built\n");
 
-            printf("particle 10 has %d neighbors\n",nbr_particle_list[10]->size());
-            printf("particle %d has %d neighbors\n",num_particles/2,nbr_particle_list[num_particles/2]->size());
-            printf("particle %d has %d neighbors\n",num_particles-1,nbr_particle_list[num_particles-1]->size());
-            //printf("particle 863 has %d neighbors\n",nbr_particle_list[863]->size());
-            //printf("particle 1727 has %d neighbors\n",nbr_particle_list[1727]->size());
+            //printf("particle 10 has %d neighbors\n",nbr_particle_list[10]->size());
+            //printf("particle %d has %d neighbors\n",num_particles/2,nbr_particle_list[num_particles/2]->size());
+            //printf("particle %d has %d neighbors\n",num_particles-1,nbr_particle_list[num_particles-1]->size());
             //for (int i=0; i<nbr_particle_list[0]->size(); ++i) {
             //    printf("%d\n", nbr_particle_list[0]->at(i));
             //}
-
-            // now have complete neighbor lists
 
             // analyzing timestep for H bonds
             for (int i=0; i<num_particles; ++i) {
@@ -435,25 +435,25 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 vector<int>* my_nbr_particles = nbr_particle_list[i];
                 for (int j=0; j<my_nbr_particles->size(); ++j) {
                     int acceptor_O = get_O_atom_idx(my_nbr_particles->at(j));
-                    for (int k=1; k<3; ++k) { // for each H
+                    for (int k=1; k<3; ++k) { // for each H, 1 and 2
                         // find O in neighbors within oh_cutoff and phi_cutoff
                         if (is_H_bond(donor_O, k, acceptor_O, step, num_particles, oh_cutoff, phi_cutoff,positions,h_positions,x_width,y_width,z_width)) {
                             //printf("found a hydrogen bond between %d and %d!\n",donor_O+k,acceptor_O);
                             num_hbonds[step]+=1;
-                            hbonds_this_step+=1;
                             int donor_H = donor_O+k;
                             pair<int, int> hbond_id(donor_H,acceptor_O);
                             //printf("hbonds %p, hbond_id %p, hbond_id %d %d\n",hbonds, &hbond_id, hbond_id.first, hbond_id.second);
                             hbond_map_itr itr = hbonds->find(hbond_id);
-                            //printf("after finding itr\n");
+                            // if hbond has been found previously
                             if (itr != hbonds->end()) {
                                 (itr->second)->push_back(step);
                                 //printf("existing hbond at step %d\n",step);
-                            } else {
+                            }
+                            // a new hbond is found!
+                            else {
                                 vector<int>* nvec = new vector<int>();
                                 //printf("new hbond at step %d\n",step);
                                 hbonds->insert(make_pair(hbond_id,nvec));
-                                //printf("got here\n");
                                 //printf("size of new vector: %d\n",nvec->size());
                                 nvec->push_back(step);
                                 //printf("size of new vector: %d\n",nvec->size());
@@ -488,7 +488,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 }
             }
 
-            printf("Got to end of step %d, total %d hbonds\n",step,hbonds_this_step);
+            //printf("Got to end of step %d, total %d hbonds\n",step,num_hbonds[step]);
             for (int i=0; i<num_particles; ++i) {
                 nbr_particle_list[i]->clear();
             }
@@ -498,28 +498,33 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         // calculate hbond lifetimes and correlations
         vector<int>* hb_lifetimes = new vector<int>();
         hbond_map_itr itr = hbonds->begin();
+        // or do a "while itr != hbonds->end()" ?? FIXME
         for (int i=0;i<(hbonds)->size(); ++i) {
 
             vector<int>* this_hbond = (itr->second);
-            int previous=-20;
-            int current=-10;
+            int current=this_hbond->at(0);
+            int previous=current-1;
             int lifetime=0;
 
             //for (int j=0; j<this_hbond->size(); ++j) {
-                //printf("%d, ",this_hbond->at(j));
+            //printf("%d, ",this_hbond->at(j));
             //}
             //printf("\n");
-            for (int step_meas=0; step_meas<max_meas_time; ++step_meas) {
-                //printf("correlation for step_meas %d\n",step_meas);
-                for (int j=0; j<this_hbond->size(); ++j) {
-                    current=this_hbond->at(j);
-                    assert(current>=0);
-                    if ( (current-1) == previous ) {
-                        lifetime+=1;
-                    } else {
-                        hb_lifetimes->push_back(lifetime);
-                        lifetime=0;
-                    }
+            //printf("correlation for step_meas %d\n",step_meas);
+            for (int j=0; j<this_hbond->size(); ++j) {
+                current=this_hbond->at(j);
+                assert(current>=0);
+
+                // bond lifetimes
+                if ( (current-1) == previous ) {
+                    lifetime+=1;
+                } else {
+                    hb_lifetimes->push_back(lifetime);
+                    lifetime=0;
+                }
+
+                // bond correlation functions
+                for (int step_meas=0; step_meas<min(current,max_meas_time); ++step_meas) {
                     int t0=current-step_meas;
                     //vector<int>::iterator it;
                     //it = find(this_hbond->begin(),this_hbond->end(),t0);
@@ -527,35 +532,49 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                         Ch[step_meas]+=1;
                         //printf("found correlation\n");
                     }
-                    previous=current;
-                    current=-10;
                 }
+
+                // reset previous and current placeholders
+                previous=current;
+                current=-10;
             }
             itr = next(itr);
         }
 
-        // diagnostics
-
+        // calculate and print final diagnostics
+        // such as:
+        // max, min lifetime
+        // average lifetime
         int max_lifetime=0;
         int min_lifetime=100000;
 
         double sum=0;
         for (int i=0; i<hb_lifetimes->size(); ++i) {
-            if (hb_lifetimes->at(i)>max_lifetime) {
-                max_lifetime = hb_lifetimes->at(i);
-            } else if (hb_lifetimes->at(i)<min_lifetime) {
-                min_lifetime = hb_lifetimes->at(i);
+            int my_life=hb_lifetimes->at(i);
+            if (my_life>max_lifetime) {
+                max_lifetime = my_life;
+            } else if (my_life<min_lifetime) {
+                min_lifetime = my_life;
             }
-            sum+=hb_lifetimes->at(i);
+
+            sum+=my_life;
         }
-        double avg_lifetime=1.0*sum/hb_lifetimes->size();
+        double life_bin_size = 1.0*max_lifetime/num_life_bins;
+        for (int i=0; i<hb_lifetimes->size(); ++i) {
+            int my_life=hb_lifetimes->at(i);
+            Lh[(int) floor( my_life/life_bin_size ) ]+=1;
+        }
+
+        double avg_lifetime=1.0*sum/( hb_lifetimes->size() );
 
         printf("%d unique hbonds found\n",(hbonds)->size());
         printf("average lifetime: %f\n",avg_lifetime);
         printf("hbonds over time (%d steps):\n", num_timesteps);
+
         for (int i=0; i<num_timesteps; ++i) {
             printf("step %d, %d hbonds\n",i,num_hbonds[i]);
         }
+
         printf("Ch pre-normalization:\n");
         for (int i=0; i<max_meas_time; ++i) {
             printf("%f ",Ch[i]);
@@ -577,9 +596,10 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         double N_occu_ave = 1.0*N_occu_total/num_timesteps;
         //omega = (1.0*omega_total/N_occu_ave)/(num_timesteps);
         printf("N_occu_ave = %f\n",N_occu_ave);
+        double Ch_zero=Ch[0];
         for (int i=0; i<max_meas_time; ++i) {
             t0_max=num_timesteps-i;
-            Ch[i]=Ch[i]/t0_max/num_particles; // normalizing Ch
+            Ch[i]=Ch[i]/Ch_zero; // normalizing Ch
             if (VERBOSE) {
                 printf("%d\n",t0_max);
             }
@@ -596,20 +616,27 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         }
 
         // FIXME
-           ofstream CHout;
-           CHout.open("results/C_H-"+suffix+"-w"+to_string(num_particles)+"_s"+to_string(skip)+
-                   "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
-           ofstream HBout;
-           HBout.open("results/H_B-"+suffix+"-w"+to_string(num_particles)+"_s"+to_string(skip)+
-                   "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
-           CHout << "#t Ch" << endl;
-           for (int i=0; i< max_meas_time; ++i) {
-               CHout << plot_time[i] << " " << Ch[i] << endl;
-           }
-           HBout << "#t hbonds" << endl;
-           for (int i=0; i< num_timesteps; ++i) {
-               HBout << full_time[i] << " " << num_hbonds[i] << endl;
-           }
+        ofstream CHout; // intermittent hbond correlation function
+        CHout.open("results/C_H-"+suffix+"-w"+to_string(num_particles)+
+                "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+        ofstream HBout; // number of hbonds at each timestep
+        HBout.open("results/H_B-"+suffix+"-w"+to_string(num_particles)+
+                "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+        ofstream HLout; // hbond lifetime profile
+        HLout.open("results/H_L-"+suffix+"-w"+to_string(num_particles)+
+                "_m"+to_string(max_meas_time)+"_t"+to_string(num_timesteps)+"_d"+to_string(dump_time)+"fs");
+        CHout << "#t Ch" << endl;
+        for (int i=0; i< max_meas_time; ++i) {
+            CHout << plot_time[i] << " " << Ch[i] << endl;
+        }
+        HBout << "#t hbonds" << endl;
+        for (int i=0; i< num_timesteps; ++i) {
+            HBout << full_time[i] << " " << num_hbonds[i] << endl;
+        }
+        HLout << "#lifetime occurence" << endl;
+        for (int i=0; i< num_life_bins; ++i) {
+            HLout << life_bin_size*i << " " << Lh[i] << endl;
+        }
         file_buffer.close();
     }
     else {
@@ -647,7 +674,7 @@ int main(int argc, const char * argv[]) {
     int num_particles=1000;
     int num_timesteps=200;
     int max_meas_time=100;
-    int dump_time=20;
+    double dump_time=20;
     int O_id=2;
     clock_t start, time;
     string suffix;
@@ -697,7 +724,7 @@ int main(int argc, const char * argv[]) {
             O_id = atoi(argv[i+1]);
         }
         if (strcmp("-r", argv[i])==0) {
-            dump_time = atoi(argv[i+1]);
+            dump_time = atof(argv[i+1]);
         }
         if (strcmp("-w", argv[i])==0) {
             num_particles = atoi(argv[i+1]);
