@@ -185,7 +185,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         std::vector<int>** bins, int mb, int nb,
         double oo_cutoff, double oh_cutoff, double phi_cutoff, hbond_map* hbonds,
         double* plot_time, double* full_time,
-        int skip, int dump_time, int num_particles, int num_timesteps, int max_meas_time,
+        int skip, double dump_time, int num_particles, int num_timesteps, int max_meas_time,
         double x0, double x1, double y0, double y1, double z0, double z1,
         std::string suffix, int O_id, bool VERBOSE) {
 
@@ -229,9 +229,9 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             printf("Theta initial: [");
             for (int i=0; i<max_meas_time; ++i) {
                 int my_2d_index=get_idx(i,1394,num_particles);
-                printf("%d  %d",my_2d_index,theta[my_2d_index]);
-                printf("]\n");
+                printf("%d  %d\n",my_2d_index,theta[my_2d_index]);
             }
+            printf("]\n");
         }
 
         positions=(double*) malloc(3*num_timesteps*num_particles*sizeof(double));
@@ -261,11 +261,13 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
         // begin reading timesteps
         for (int step=0; step<num_timesteps;++step) {
             //printf("-----------\n");
-            //printf("Beginning step %d\n",step);
             file_stream.ignore(1000,'\n');
             getline(file_stream,str);
             current_time=stoi(str);
-            //printf("TIMESTEP: %d\n",current_time);
+            if (VERBOSE) {
+                printf("Beginning step %d\n",step);
+                printf("TIMESTEP: %d\n",current_time);
+            }
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
@@ -290,7 +292,9 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             double x_width=xmax-xmin;
             double y_width=ymax-ymin;
             double z_width=zmax-zmin;
-            //printf("x,y,z dimensions: %f %f %f\n",x_width,y_width,z_width);
+            if (VERBOSE) {
+                printf("x,y,z dimensions: %f %f %f\n",x_width,y_width,z_width);
+            }
 
             for (int atom=0; atom<num_atoms; ++atom) {
                 getline(file_stream,str);
@@ -301,12 +305,12 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                     particle_idx=line_split[1]-1; // starts at 0
                     atom_idx=line_split[0]-1; // starts at 0
                     int my_h_index=get_idx(step,particle_idx,atom_idx,0,num_particles);
-                    //int my_2d_index=get_idx(step,particle_idx,num_particles);
-                    //int my_3d_index=get_idx(step,particle_idx,0,num_particles);
                     for (int k=0; k<3; ++k) {
                         h_positions[my_h_index+k] = line_split[3+k];
                     }
-                    //printf("Got here, hydrogen, atom %d, step %d\n", atom,step);
+                    if (VERBOSE) {
+                        printf("Got here, hydrogen, atom %d, step %d\n", atom,step);
+                    }
                 }
 
                 // check atom is oxygen
@@ -316,7 +320,9 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                     int my_2d_index=get_idx(step,particle_idx,num_particles);
                     int my_3d_index=get_idx(step,particle_idx,0,num_particles);
 
-                    //printf("Got here, oxygen, atom: %d, my particle_idx: %d, my_3d_index: %d, step %d\n", atom, particle_idx, my_3d_index,step);
+                    if (VERBOSE) {
+                        printf("Got here, oxygen, atom: %d, my particle_idx: %d, my_3d_index: %d, step %d\n", atom, particle_idx, my_3d_index,step);
+                    }
                     for (int k=0; k<3; ++k) {
                         //printf("beginning of loop\n");
                         positions[my_3d_index+k] = line_split[3+k];
@@ -604,7 +610,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                 printf("%d\n",t0_max);
             }
 
-            plot_time[i] = (i*dump_time)/1000.0; // now in ps
+            plot_time[i] = (1.0*i*dump_time)/1000.0; // now in ps
         }
         printf("Ch post-normalization:\n");
         for (int i=0; i<max_meas_time; ++i) {
