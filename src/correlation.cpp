@@ -27,7 +27,7 @@
 void read_traj(std::string file_name,int* theta, double* velocities, double* positions,
         double* R, double* Cv, double* Cv_int, double* MSD, double* Cm,
         double* mu, double* Mnet, double* plot_time, double* full_time,
-        int skip, int dump_time, int num_particles, int num_timesteps, int max_meas_time,
+        int skip, double dump_time, int num_particles, int num_timesteps, int max_meas_time,
         double x0, double x1, double y0, double y1, double z0, double z1,
         std::string suffix, int O_id, bool VERBOSE) {
     // requires that lammps trajectory be of the following format(ish):
@@ -43,6 +43,8 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
 
         istream file_stream(&file_buffer);
         vector<double> line_split;
+        double lo [3];
+        double hi [3];
 
         // parse beginning lines
         file_stream.ignore(1000,'\n');
@@ -92,9 +94,20 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
             file_stream.ignore(1000,'\n');
-            file_stream.ignore(1000,'\n');
-            file_stream.ignore(1000,'\n');
-            file_stream.ignore(1000,'\n');
+
+            getline(file_stream,str);
+            split(str,' ',line_split);
+            lo[0]=line_split[0];
+            hi[0]=line_split[1];
+            getline(file_stream,str);
+            split(str,' ',line_split);
+            lo[1]=line_split[0];
+            hi[1]=line_split[1];
+            getline(file_stream,str);
+            split(str,' ',line_split);
+            lo[2]=line_split[0];
+            hi[2]=line_split[1];
+
             file_stream.ignore(1000,'\n');
 
             for (int atom=0; atom<num_atoms; ++atom) {
@@ -123,6 +136,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
                     //q=line_split[9]; // dipole
 
                     for (int k=0; k<3; ++k) {
+                        //positions[my_3d_index+k] = wrap_pbc(line_split[3+k],lo[k],hi[k]);
                         positions[my_3d_index+k] = line_split[3+k];
                         velocities[my_3d_index+k] = line_split[6+k];
                         //mu[my_3d_index+k] += q*line_split[3+k]; // xyz components of dipole
@@ -316,7 +330,7 @@ int main(int argc, const char * argv[]) {
     int num_particles=1000;
     int num_timesteps=200;
     int max_meas_time=100;
-    int dump_time=20;
+    double dump_time=20;
     int O_id=2;
     clock_t start, time;
     string suffix;
@@ -340,7 +354,7 @@ int main(int argc, const char * argv[]) {
             skip_steps = atoi(argv[i+1]);
         }
         if (strcmp("-r", argv[i])==0) {
-            dump_time = atoi(argv[i+1]);
+            dump_time = atof(argv[i+1]);
         }
         if (strcmp("-e", argv[i])==0) {
             suffix = string(argv[i+1]);

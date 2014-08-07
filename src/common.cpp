@@ -32,6 +32,11 @@ bool check_in_box(double x, double y, double z, double x0, double x1, double y0,
     return ((x > x0) && (x < x1) && (y > y0) && (y < y1) && (z > z0) && (z < z1));
 }
 
+double wrap_pbc(double xu, double xlo, double xhi) {
+    double xwidth = xhi - xlo;
+    double x = xlo + xu - xwidth * floor( (xu - xlo) / xwidth );
+    return x;
+}
 // hydrogens index (for h_positions)
 int get_idx(int step,int particle_idx,int atom_idx,int k,int num_particles) {
     int j=atom_idx%3-1;
