@@ -1,0 +1,36 @@
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+#$ -M michelle.liu@berkeley.edu
+#$ -m e
+#$ -j y
+#$ -N all_coarse_13.0
+#$ -o log/$JOB_NAME.log
+#$ -pe threaded 1
+
+######### 13.0 AA coarse-grained wall #########
+suffix=coarse-13.0
+num_particles=432
+sep=13.0
+oid=1
+
+skip=0
+total_time=1000000
+meas_time=100000
+inp_file=../coarse_13.0/coarse_13.0.m160143.out
+dump_step=20
+./bin/dipole -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -r $dump_step $inp_file
+
+skip=0
+total_time=100000
+meas_time=1000
+inp_file=../coarse_13.0/coarse_13.0.t161736-20fs.traj
+dump_step=20
+./bin/correlation -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -r $dump_step $inp_file
+
+skip=0
+total_time=10000
+meas_time=1000
+inp_file=../coarse_13.0/coarse_13.0.t160143-0.5fs.traj
+dump_step=0.5
+#./bin/hbonds -s $skip -t $total_time -m $meas_time -d $sep -e $suffix -w $num_particles -o $oid -r $dump_step -C $inp_file
