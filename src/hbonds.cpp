@@ -202,6 +202,9 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
 
         istream file_stream(&file_buffer);
         vector<double> line_split;
+        double lo [3];
+        double hi [3];
+        double boxw [3];
 
         // parse beginning lines
         file_stream.ignore(1000,'\n');
@@ -275,25 +278,41 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
             // read box bounds
             getline(file_stream,str);
             split(str,' ',line_split);
-            xmin=line_split[0];
-            xmax=line_split[1];
+            lo[0]=line_split[0];
+            hi[0]=line_split[1];
             getline(file_stream,str);
             split(str,' ',line_split);
-            ymin=line_split[0];
-            ymax=line_split[1];
+            lo[1]=line_split[0];
+            hi[1]=line_split[1];
             getline(file_stream,str);
             split(str,' ',line_split);
-            zmin=line_split[0];
-            zmax=line_split[1];
+            lo[2]=line_split[0];
+            hi[2]=line_split[1];
+
+            //split(str,' ',line_split);
+            //xmin=line_split[0];
+            //xmax=line_split[1];
+            //getline(file_stream,str);
+            //split(str,' ',line_split);
+            //ymin=line_split[0];
+            //ymax=line_split[1];
+            //getline(file_stream,str);
+            //split(str,' ',line_split);
+            //zmin=line_split[0];
+            //zmax=line_split[1];
 
             file_stream.ignore(1000,'\n');
 
             // calculate box size
-            double x_width=xmax-xmin;
-            double y_width=ymax-ymin;
-            double z_width=zmax-zmin;
+            for (int i=0; i<3; ++i) {
+                boxw[i] = hi[i] - lo[i];
+            }
+            //double x_width=xmax-xmin;
+            //double y_width=ymax-ymin;
+            //double z_width=zmax-zmin;
+
             if (VERBOSE) {
-                printf("x,y,z dimensions: %f %f %f\n",x_width,y_width,z_width);
+                printf("x,y,z dimensions: %f %f %f\n",boxw[0],boxw[1],boxw[2]);
             }
 
             for (int atom=0; atom<num_atoms; ++atom) {
@@ -413,7 +432,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                                 double r_oioj = distance_pbc(
                                         positions[my_3d_index],positions[my_3d_index+1],positions[my_3d_index+2],
                                         positions[neighbor_3d_index],positions[neighbor_3d_index+1],positions[neighbor_3d_index+2],
-                                        x_width, y_width, z_width );
+                                        boxw[0], boxw[1], boxw[2] );
                                 if (r_oioj < oo_cutoff) {
                                     //printf("%d and %d are neighbors\n",this_bin->at(jj),neighbor_bin->at(ii));
                                     nbr_particle_list[this_bin->at(jj)]->push_back(neighbor_bin->at(ii));
@@ -443,7 +462,7 @@ void read_hbonds(std::string file_name,int* theta, double* Ch, double* positions
                     int acceptor_O = get_O_atom_idx(my_nbr_particles->at(j));
                     for (int k=1; k<3; ++k) { // for each H, 1 and 2
                         // find O in neighbors within oh_cutoff and phi_cutoff
-                        if (is_H_bond(donor_O, k, acceptor_O, step, num_particles, oh_cutoff, phi_cutoff,positions,h_positions,x_width,y_width,z_width)) {
+                        if (is_H_bond(donor_O, k, acceptor_O, step, num_particles, oh_cutoff, phi_cutoff,positions,h_positions,boxw[0],boxw[1],boxw[2])) {
                             //printf("found a hydrogen bond between %d and %d!\n",donor_O+k,acceptor_O);
                             num_hbonds[step]+=1;
                             int donor_H = donor_O+k;

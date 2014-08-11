@@ -45,6 +45,7 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
         vector<double> line_split;
         double lo [3];
         double hi [3];
+        double boxw [3];
 
         // parse beginning lines
         file_stream.ignore(1000,'\n');
@@ -107,6 +108,11 @@ void read_traj(std::string file_name,int* theta, double* velocities, double* pos
             split(str,' ',line_split);
             lo[2]=line_split[0];
             hi[2]=line_split[1];
+
+            // calculate box size
+            for (int i=0; i<3; ++i) {
+                boxw[i] = hi[i] - lo[i];
+            }
 
             file_stream.ignore(1000,'\n');
 
